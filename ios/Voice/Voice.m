@@ -141,6 +141,7 @@
         self.speechRecognizer = [[SFSpeechRecognizer alloc] init];
     }
     
+    self.speechRecognizer.supportsOnDeviceRecognition = YES;
     self.speechRecognizer.delegate = self;
     
     // Start audio session...
