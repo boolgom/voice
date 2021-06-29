@@ -39,8 +39,9 @@ public class VoiceModule extends ReactContextBaseJavaModule implements Recogniti
   final ReactApplicationContext reactContext;
   private SpeechRecognizer speech = null;
   private boolean isRecognizing = false;
+  private boolean isEnd = true;
   private String locale = null;
-
+  private Intent intent = null;
   public VoiceModule(ReactApplicationContext reactContext) {
     super(reactContext);
     this.reactContext = reactContext;
@@ -123,6 +124,8 @@ public class VoiceModule extends ReactContextBaseJavaModule implements Recogniti
     }
 
     intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, getLocale(this.locale));
+
+    this.intent = intent;
     speech.startListening(intent);
   }
 
@@ -136,6 +139,7 @@ public class VoiceModule extends ReactContextBaseJavaModule implements Recogniti
         try {
           startListening(opts);
           isRecognizing = true;
+          isEnd = false;
           callback.invoke(false);
         } catch (Exception e) {
           callback.invoke(e.getMessage());
@@ -184,6 +188,7 @@ public class VoiceModule extends ReactContextBaseJavaModule implements Recogniti
             speech.stopListening();
           }
           isRecognizing = false;
+          isEnd = true;
           callback.invoke(false);
         } catch(Exception e) {
           callback.invoke(e.getMessage());
@@ -203,6 +208,7 @@ public class VoiceModule extends ReactContextBaseJavaModule implements Recogniti
             speech.cancel();
           }
           isRecognizing = false;
+          isEnd = true;
           callback.invoke(false);
         } catch(Exception e) {
           callback.invoke(e.getMessage());
@@ -223,6 +229,7 @@ public class VoiceModule extends ReactContextBaseJavaModule implements Recogniti
           }
           speech = null;
           isRecognizing = false;
+          isEnd = true;
           callback.invoke(false);
         } catch(Exception e) {
           callback.invoke(e.getMessage());
@@ -310,8 +317,11 @@ public class VoiceModule extends ReactContextBaseJavaModule implements Recogniti
     error.putString("code", String.valueOf(errorCode));
     WritableMap event = Arguments.createMap();
     event.putMap("error", error);
-    sendEvent("onSpeechError", event);
     Log.d("ASR", "onError() - " + errorMessage);
+    if (errorCode == 7 && !isEnd)
+      speech.startListening(this.intent);
+    else
+      sendEvent("onSpeechError", event);
   }
 
   @Override
@@ -353,6 +363,8 @@ public class VoiceModule extends ReactContextBaseJavaModule implements Recogniti
     event.putArray("value", arr);
     sendEvent("onSpeechResults", event);
     Log.d("ASR", "onResults()");
+    if (!isEnd)
+      speech.startListening(this.intent);
   }
 
   @Override
