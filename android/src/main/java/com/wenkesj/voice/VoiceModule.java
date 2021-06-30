@@ -2,9 +2,11 @@ package com.wenkesj.voice;
 
 import android.Manifest;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.speech.RecognitionListener;
@@ -131,6 +133,10 @@ public class VoiceModule extends ReactContextBaseJavaModule implements Recogniti
 
   private void startSpeechWithPermissions(final String locale, final ReadableMap opts, final Callback callback) {
     this.locale = locale;
+    AudioManager mgr = (AudioManager)this.reactContext.getSystemService(Context.AUDIO_SERVICE);
+    mgr.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_MUTE,0);
+    mgr.adjustStreamVolume(AudioManager.STREAM_SYSTEM, AudioManager.ADJUST_MUTE,0);
+    mgr.adjustStreamVolume(AudioManager.STREAM_NOTIFICATION, AudioManager.ADJUST_MUTE,0);
 
     Handler mainHandler = new Handler(this.reactContext.getMainLooper());
     mainHandler.post(new Runnable() {
@@ -140,6 +146,7 @@ public class VoiceModule extends ReactContextBaseJavaModule implements Recogniti
           startListening(opts);
           isRecognizing = true;
           isEnd = false;
+
           callback.invoke(false);
         } catch (Exception e) {
           callback.invoke(e.getMessage());
@@ -180,6 +187,11 @@ public class VoiceModule extends ReactContextBaseJavaModule implements Recogniti
   @ReactMethod
   public void stopSpeech(final Callback callback) {
     Handler mainHandler = new Handler(this.reactContext.getMainLooper());
+
+    AudioManager mgr = (AudioManager)this.reactContext.getSystemService(Context.AUDIO_SERVICE);
+    mgr.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_UNMUTE,0);
+    mgr.adjustStreamVolume(AudioManager.STREAM_SYSTEM, AudioManager.ADJUST_UNMUTE,0);
+    mgr.adjustStreamVolume(AudioManager.STREAM_NOTIFICATION, AudioManager.ADJUST_UNMUTE,0);
     mainHandler.post(new Runnable() {
       @Override
       public void run() {
